@@ -9,6 +9,10 @@ collect_deps = function(x) {
   collector = DependencyCollector()
   .collect_deps(x, collector)
 
+  # Check for loop-carried dependencies.
+  collector$is_sequential = collector$is_sequential ||
+    any(collector$reads %in% collector$writes)
+
   return(collector)
 }
 
@@ -85,9 +89,13 @@ DependencyCollector =
   setRefClass("DependencyCollector",
     fields = list(
       "reads" = "character",
-      "writes" = "character"
+      "writes" = "character",
+      "is_sequential" = "logical"
     ),
     methods = list(
+      "initialize" = function(is_sequential = FALSE, ...) {
+        callSuper(is_sequential = is_sequential, ...)
+      },
       "add_read" = function(x) {
         x = as.character(x)
         if (!x %in% reads)
