@@ -10,9 +10,7 @@ collect_deps = function(x) {
   .collect_deps(x, collector)
 
   # Check for loop-carried dependencies.
-  collector$is_sequential = collector$is_sequential ||
-    any(collector$reads %in% collector$writes)
-
+  collector$update()
   return(collector)
 }
 
@@ -70,7 +68,14 @@ collect_deps = function(x) {
 }
 
 
-.collect_deps.if =      # if [condition] [if] [else]
+.collect_deps.if = function(x, state) {
+  # if [condition] [if] [else]
+  state$in_conditional = TRUE
+  lapply(x[-1], .collect_deps, state)
+  state$in_conditional = FALSE
+}
+
+
 .collect_deps.while =   # while [condition] [body]
 .collect_deps.repeat =  # repeat [body]
 `.collect_deps.{` =     # { [line 1] [line 2] ...
@@ -90,21 +95,43 @@ DependencyCollector =
     fields = list(
       "reads" = "character",
       "writes" = "character",
-      "is_sequential" = "logical"
+      #"conditional_reads" = "character",
+      "conditional_writes" = "character",
+      "is_sequential" = "logical",
+      "in_conditional" = "logical"
     ),
     methods = list(
-      "initialize" = function(is_sequential = FALSE, ...) {
-        callSuper(is_sequential = is_sequential, ...)
+      "initialize" = function(...,
+        is_sequential = FALSE,
+        in_conditional = FALSE
+      ) {
+        callSuper(...,
+          is_sequential = is_sequential,
+          in_conditional = in_conditional
+        )
       },
+
       "add_read" = function(x) {
         x = as.character(x)
         if (!x %in% reads)
           reads <<- c(reads, x)
       },
+
       "add_write" = function(x) {
         x = as.character(x)
-        if (!x %in% writes)
-          writes <<- c(writes, x)
+        if (in_conditional) {
+          if (!x %in% conditional_writes) 
+            conditional_writes <<- c(conditional_writes, x)
+        } else {
+          if (!x %in% writes)
+            writes <<- c(writes, x)
+        }
+      },
+
+      "update" = function() {
+        is_sequential <<- is_sequential ||
+          any(reads %in% c(writes, conditional_writes))
       }
+
     )
   )

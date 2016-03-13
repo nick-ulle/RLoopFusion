@@ -13,7 +13,7 @@ test_that("dependencies are collected for simple if", {
   result = collect_deps(expression)
 
   expect_equal_set(result$reads, "x")
-  expect_equal_set(result$writes, c("a1", "a2"))
+  expect_equal_set(result$conditional_writes, c("a1", "a2"))
 })
 
 
@@ -31,7 +31,7 @@ test_that("dependencies are collected for blocked if-else", {
   result = collect_deps(expression)
 
   expect_equal_set(result$reads, c("x1", "x2", "z"))
-  expect_equal_set(result$writes, c("a1", "a2", "a3"))
+  expect_equal_set(result$conditional_writes, c("a1", "a2", "a3"))
 })
 
 
