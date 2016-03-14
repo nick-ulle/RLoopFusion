@@ -8,9 +8,6 @@
 # ordering.
 expect_equal_set = function(x, y) {
   eval(bquote(
-    expect_equal( length(.(x)), length(.(y)) )
-  ))
-  eval(bquote(
-    expect_true(all(.(x) %in% .(y)))
+    expect_true(setequal(.(x), .(y)))
   ))
 }

@@ -4,7 +4,7 @@
 context("loop-carried deps")
 
 
-test_that("simple parallel loop not sequential", {
+test_that("simple parallel loop is parallel", {
   expression = quote(
     for (i in 1:10) {
       a = i
@@ -31,7 +31,7 @@ test_that("sequential loop is sequential", {
 })
 
 
-test_that("parallel loop not sequential", {
+test_that("parallel loop is parallel", {
   expression = quote(
     for (i in 1:10) {
       if (i == 1)
@@ -77,7 +77,6 @@ test_that("sequential loop with conditional is sequential", {
 })
 
 
-# TODO: Make this test pass.
 test_that("parallel loop with conditional is parallel", {
   expression = quote(
     for (i in 1:n) {
@@ -95,4 +94,20 @@ test_that("parallel loop with conditional is parallel", {
   result = collect_deps(expression)
   
   expect_false(result$is_sequential)
+})
+
+
+test_that("parallel loop with nested conditional is parallel", {
+  expression = quote({
+    if (i == 1)
+      if (j == 2) a = 3
+    else
+      a = 4
+
+    b = a
+  })
+
+  result = collect_deps(expression)
+
+  expect_true(result$is_sequential)
 })

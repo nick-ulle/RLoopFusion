@@ -44,19 +44,44 @@ collect_deps = function(x) {
 }
 
 
-.collect_deps.name = function(x, state) {
-  x = as.character(x)
-  # If the variable was written to in this block, then subsequent reads are not
-  # external dependencies.
-  if (!x %in% state$writes) state$add_read(x)
-}
+# Need an unconditional write in every branch. So use a blank collector for
+# every branch. The new write-set is the intersection of each branch's write
+# set. Writes that aren't in the new write-set are conditional writes.
+.collect_deps.if = function(x, state) {
+  # if [condition] [if] [else]
 
+  .collect_deps(x[[2]], state)
 
-.collect_deps.for = function(x, state) {
-  # for [variable] [range] [body]
-  state$add_write(x[[2]])
-  
-  lapply(x[-(1:2)], .collect_deps, state)
+  deps_if = DependencyCollector(writes = state$writes)
+  .collect_deps(x[[3]], deps_if)
+
+  if (length(x) == 3) {
+    reads = deps_if$reads
+    conditional_writes = union(deps_if$writes, deps_if$conditional_writes)
+
+  } else {
+    deps_else = DependencyCollector(writes = state$writes)
+    .collect_deps(x[[4]], deps_else)
+
+    reads = union(deps_if$reads, deps_else$reads)
+
+    # A write that appears in both branches is unconditional.
+    # W1 & W2
+    writes = intersect(deps_if$writes, deps_else$writes)
+
+    # All other writes are conditional.
+    # (W1 | W2 | CW1 | CW2) / W
+    conditional_writes = union(
+      deps_if$writes, deps_if$conditional_writes,
+      deps_else$writes, deps_else$conditional_writes
+    )
+    conditional_writes = setdiff(conditional_writes, writes)
+
+    state$add_write(writes)
+  }
+
+  state$add_read(reads)
+  state$add_write(conditional_writes, conditional = TRUE)
 }
 
 
@@ -68,11 +93,11 @@ collect_deps = function(x) {
 }
 
 
-.collect_deps.if = function(x, state) {
-  # if [condition] [if] [else]
-  state$in_conditional = TRUE
-  lapply(x[-1], .collect_deps, state)
-  state$in_conditional = FALSE
+.collect_deps.for = function(x, state) {
+  # for [variable] [range] [body]
+  state$add_write(x[[2]])
+  
+  lapply(x[-(1:2)], .collect_deps, state)
 }
 
 
@@ -82,6 +107,11 @@ collect_deps = function(x) {
   function(x, state) {
     lapply(x[-1], .collect_deps, state)
   }
+
+
+.collect_deps.name = function(x, state) {
+  state$add_read(x)
+}
 
 
 .collect_deps.default = function(x, state) {
@@ -113,25 +143,36 @@ DependencyCollector =
 
       "add_read" = function(x) {
         x = as.character(x)
-        if (!x %in% reads)
-          reads <<- c(reads, x)
+        # Only track reads that happen before writes.
+        reads <<- union(reads, setdiff(x, writes))
       },
 
-      "add_write" = function(x) {
+      "add_write" = function(x, conditional = FALSE) {
         x = as.character(x)
-        if (in_conditional) {
-          if (!x %in% conditional_writes) 
-            conditional_writes <<- c(conditional_writes, x)
+        if (conditional) {
+          conditional_writes <<- union(conditional_writes, x)
         } else {
-          if (!x %in% writes)
-            writes <<- c(writes, x)
+          writes <<- union(writes, x)
         }
       },
 
       "update" = function() {
+        # A loop is sequential if it contains antidependences.
+        #
+        #   for (...) {
+        #       = a
+        #     a =
+        #   }
+        #
+        # We only track reads that happen before writes, so:
         is_sequential <<- is_sequential ||
           any(reads %in% c(writes, conditional_writes))
       }
 
     )
   )
+
+
+union = function(...) {
+  unique(do.call(c, lapply(list(...), as.vector)))
+}
