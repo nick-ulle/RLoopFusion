@@ -31,6 +31,9 @@ collect_deps = function(x) {
 
   if (class(left) == "call") {
     # function [write] [read 1] [read 2] ...
+    if (as.character(left[[1]]) == "[")
+      state$add_read(left[[2]])
+
     state$add_write(left[[2]])
     lapply(left[-(1:2)], .collect_deps, state)
 

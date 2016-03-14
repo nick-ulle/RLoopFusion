@@ -9,7 +9,7 @@ test_that("write dependencies are collected for arrays", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, "y")
+  expect_equal_set(result$reads, c("x", "y"))
   expect_equal_set(result$writes, "x")
 })
 
