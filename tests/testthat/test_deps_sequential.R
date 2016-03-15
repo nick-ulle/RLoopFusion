@@ -14,7 +14,7 @@ test_that("simple parallel loop is parallel", {
 
   result = collect_deps(expression)
 
-  expect_false(result$is_sequential)
+  expect_false(result$antidep)
 })
 
 
@@ -27,7 +27,7 @@ test_that("sequential loop is sequential", {
 
   result = collect_deps(expression)
 
-  expect_true(result$is_sequential)
+  expect_true(result$antidep)
 })
 
 
@@ -44,7 +44,7 @@ test_that("parallel loop is parallel", {
 
   result = collect_deps(expression)
 
-  expect_false(result$is_sequential)
+  expect_false(result$antidep)
 })
 
 
@@ -73,7 +73,7 @@ test_that("sequential loop with conditional is sequential", {
 
   result = collect_deps(expression)
 
-  expect_true(result$is_sequential)
+  expect_true(result$antidep)
 })
 
 
@@ -93,7 +93,7 @@ test_that("parallel loop with conditional is parallel", {
 
   result = collect_deps(expression)
   
-  expect_false(result$is_sequential)
+  expect_false(result$antidep)
 })
 
 
@@ -109,5 +109,5 @@ test_that("parallel loop with nested conditional is parallel", {
 
   result = collect_deps(expression)
 
-  expect_true(result$is_sequential)
+  expect_true(result$antidep)
 })

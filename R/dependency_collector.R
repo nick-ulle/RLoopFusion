@@ -130,17 +130,14 @@ DependencyCollector =
       "writes" = "character",
       #"conditional_reads" = "character",
       "conditional_writes" = "character",
-      "is_sequential" = "logical",
-      "in_conditional" = "logical"
+      "antidep" = "logical"
     ),
     methods = list(
       "initialize" = function(...,
-        is_sequential = FALSE,
-        in_conditional = FALSE
+        antidep = FALSE
       ) {
         callSuper(...,
-          is_sequential = is_sequential,
-          in_conditional = in_conditional
+          antidep = antidep
         )
       },
 
@@ -168,7 +165,7 @@ DependencyCollector =
         #   }
         #
         # We only track reads that happen before writes, so:
-        is_sequential <<- is_sequential ||
+        antidep <<- antidep ||
           any(reads %in% c(writes, conditional_writes))
       }
 
