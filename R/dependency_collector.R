@@ -6,11 +6,11 @@
 #'
 #' @export
 collect_deps = function(x) {
-  collector = DependencyCollector()
+  collector = DependencyCollector(code = x)
   .collect_deps(x, collector)
 
   # Check for loop-carried dependencies.
-  collector$update()
+  collector$update_loop_type()
   return(collector)
 }
 
@@ -130,7 +130,9 @@ DependencyCollector =
       "writes" = "character",
       #"conditional_reads" = "character",
       "conditional_writes" = "character",
-      "antidep" = "logical"
+      "antidep" = "logical",
+      "loop_type" = "character",
+      "code" = "ANY"
     ),
     methods = list(
       "initialize" = function(...,
@@ -156,7 +158,7 @@ DependencyCollector =
         }
       },
 
-      "update" = function() {
+      "update_loop_type" = function() {
         # A loop is sequential if it contains antidependences.
         #
         #   for (...) {
@@ -165,12 +167,17 @@ DependencyCollector =
         #   }
         #
         # We only track reads that happen before writes, so:
-        antidep <<- antidep ||
-          any(reads %in% c(writes, conditional_writes))
+        loop_type <<-
+          if (class(code) == "for") {
+            if (any(reads %in% c(writes, conditional_writes)))
+              "sequential"
+            else
+              "parallel"
+          } else
+            "none"
       }
-
-    )
-  )
+    ) # end methods
+  ) # end setRefClass()
 
 
 union = function(...) {
