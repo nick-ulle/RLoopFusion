@@ -39,7 +39,7 @@ fusion_graph = function(x) {
       graph = add_fusion_edges(graph, i, nodes)
   }
 
-  list(graph = graph, node_data = nodes)
+  list(graph = graph, nodes = nodes)
 } # end fusion_graph.{
 
 
@@ -102,8 +102,7 @@ add_fusion_edges = function(graph, i, nodes) {
         # these are also handled.
         any(writes %in% ancestor$reads)
       ) {
-        graph = addEdge(ancestor_name, node_name, graph)
-        edgeData(graph, ancestor_name, node_name, "prevent_fusion") = TRUE
+        graph = add_fp_edge(ancestor_name, node_name, graph)
 
         no_edge = FALSE
       } 
@@ -131,7 +130,7 @@ add_fusion_edges = function(graph, i, nodes) {
 }
 
 
-#' Create A New Fusion Graph
+#' Create a New Fusion Graph
 #'
 #' Create an empty directed graph with default node and edge data suitable for
 #' use in loop fusion.
@@ -141,6 +140,19 @@ new_fusion_graph = function() {
   graph = graphNEL(edgemode = "directed")
   nodeDataDefaults(graph, "type") = "block"
   edgeDataDefaults(graph, "prevent_fusion") = FALSE
+
+  return(graph)
+}
+
+
+#' Add Fusion-Preventing Edge
+#'
+#' Add a fusion-preventing edge to a fusion graph.
+#'
+#' @export
+add_fp_edge = function(from, to, graph, ...) {
+  graph = addEdge(from, to, graph, ...)
+  edgeData(graph, from, to, "prevent_fusion") = TRUE
 
   return(graph)
 }
