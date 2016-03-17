@@ -12,8 +12,9 @@ test_that("dependencies are collected for simple if", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, "x")
-  expect_equal_set(result$conditional_writes, c("a1", "a2"))
+  expect_set_equal(result$dependence, c(
+      x = "input", a1 = "output", a2 = "output"
+  ))
 })
 
 
@@ -30,8 +31,10 @@ test_that("dependencies are collected for blocked if-else", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("x1", "x2", "z"))
-  expect_equal_set(result$conditional_writes, c("a1", "a2", "a3"))
+  expect_set_equal(result$dependence, c(
+      x1 = "input", a1 = "output", x2 = "input", a2 = "output", a3 = "output",
+      z = "input"
+  ))
 })
 
 
@@ -44,8 +47,8 @@ test_that("dependencies are collected for blocked for", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("n", "y"))
-  expect_equal_set(result$writes, c("i", "x"))
+  expect_set_equal(result$get_reads(), c("n", "y"))
+  expect_set_equal(result$get_writes(), c("i", "x"))
 })
 
 
@@ -59,8 +62,8 @@ test_that("dependencies are collected for blocked while", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("x", "y"))
-  expect_equal_set(result$writes, c("x", "y"))
+  expect_set_equal(result$get_reads(), c("x", "y"))
+  expect_set_equal(result$get_writes(), c("x", "y"))
 })
 
 
@@ -75,6 +78,6 @@ test_that("dependencies are collected for blocked repeat", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("x"))
-  expect_equal_set(result$writes, c("x"))
+  expect_set_equal(result$get_reads(), c("x"))
+  expect_set_equal(result$get_writes(), c("x"))
 })

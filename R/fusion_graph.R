@@ -3,7 +3,7 @@
 # Walk the code looking for a loop. Upon finding one:
 #
 #   1. [x] Create a new node for that loop.
-#   2. [x] Assess whether the loop is parallel or sequential (how do we
+#   2. [x] Assess whether the loop is parallel or serial (how do we
 #      determine this?).
 #   3. [x] Assess whether the loop depends on any variables from earlier loops.
 #      So here we need to check what variables are read from the loop.
@@ -20,15 +20,16 @@ fusion_graph = function(x) {
   graph = new_fusion_graph()
 
   # Break code into nodes (blocks and for-loops).
-  nodes = blockify(x[-1], as_block = "for")
+  code = blockify(x[-1], as_block = "for")
+  nodes = vector("list", length(code))
 
-  for (i in seq_along(nodes)) {
+  for (i in seq_along(code)) {
     # Update node with dependency information.
-    node = collect_deps(nodes[[i]])
+    node = collect_deps(code[[i]])
     nodes[[i]] = node
 
     node_name = paste0(substr(node$loop_type, 1, 1), i)
-    names(nodes)[[i]] = node_name
+    names(nodes)[[i]] = names(code)[[i]] = node_name
 
     # Create node in graph.
     graph = addNode(node_name, graph)
@@ -39,7 +40,7 @@ fusion_graph = function(x) {
       graph = add_fusion_edges(graph, i, nodes)
   }
 
-  list(graph = graph, nodes = nodes)
+  list(graph = graph, code = code)
 } # end fusion_graph.{
 
 
@@ -69,60 +70,58 @@ fusion_graph.default = function(x) {
 #' @param i index of current block
 #' @param nodes list of nodes
 add_fusion_edges = function(graph, i, nodes) {
-  node = nodes[[i]]
+  node      = nodes[[i]]
   node_name = names(nodes)[[i]]
+  is_for    = (class(node$code) == "for")
 
-  is_for = (class(node$code) == "for")
-  reads = node$reads
-  writes = union(node$writes, node$conditional_writes)
+  vars    = node$get_vars()
+  reads   = node$get_reads()
+  writes  = node$get_writes()
+  anti    = node$get_anti()
 
   for (j in seq.int(i - 1, 1, -1)) {
-    ancestor = nodes[[j]]
-    ancestor_name = names(nodes)[[j]]
+    ancestor        = nodes[[j]]
+    ancestor_name   = names(nodes)[[j]]
+    ancestor_reads  = ancestor$get_reads()
+    ancestor_writes = ancestor$get_writes()
+    is_adjacent     = FALSE
 
-    no_edge = TRUE
+    # Ordering Edges
+    # ==============
+    new_reads = setdiff(reads, ancestor_writes)
+    if (
+      # True (W, R)
+      length(new_reads) != length(reads) ||
+      # Anti (R, W) or Output (W, W)
+      any(writes %in% c(ancestor_reads, ancestor_writes))
+    ) {
+      # Add an edge.
+      graph = addEdge(ancestor_name, node_name, graph)
+      is_adjacent = TRUE
+    }
+    reads = new_reads
 
     # Fusion-Preventing Edges
     # =======================
     if (is_for && class(ancestor$code) == "for") {
       if (
-        # FPE between incompatible for-loops.
+        # Headers are not equivalent.
         !header_equal(node$code, ancestor$code) ||
+
+        # FIXME: Different for subscripted variables.
+        # Fusion would create a backward loop-carried dependence:
+        #   1. Antidependence in one loop for a variable in both loops.
+        any(ancestor$get_anti() %in% vars) ||
+        any(anti %in% ancestor$get_vars()) ||
         #
-        # FIXME: The antidependence case should be per-variable, meaning we
-        # can fuse as long as the variable with an antidependence in one loop
-        # doesn't appear in the other.
-        #
-        # FPE if either for-loop has antidependence.
-        ("sequential" %in% c(node$loop_type, ancestor$loop_type)) ||
-        # FPE if fusion would introduce antidependence.
-        # NOTE: This is the scalar (R, W) case. Since
-        #   (RBW, W) => (R, W)
-        #   (R, RBW) => (R, W)
-        # these are also handled.
-        any(writes %in% ancestor$reads)
+        #   2. Fusing the loops creates an antidependence.
+        any(writes %in% ancestor_reads)
       ) {
-        graph = add_fp_edge(ancestor_name, node_name, graph)
-
-        no_edge = FALSE
-      } 
-    }
-
-    # Dependence Edges
-    # ================
-    # FIXME: Technically, these should be FPEs if the current node is not a
-    # loop, but this doesn't seem to be necessary since the fusion algorithm
-    # only deals with one node type at a time anyways. It also doesn't matter
-    # where non-loops are placed, as long as dependence order is respected.
-    if (length(reads) != 0) {
-      ancestor_writes = c(ancestor$writes, ancestor$conditional_writes)
-
-      if (no_edge && any(reads %in% ancestor_writes))
-        # E on (W, R).
-        graph = addEdge(ancestor_name, node_name, graph)
-
-      # Remove dependences that have been satisfied.
-      reads = setdiff(reads, ancestor_writes)
+        if (is_adjacent)
+          edgeData(graph, ancestor_name, node_name, "prevent_fusion") = TRUE
+        else
+          graph = add_fp_edge(ancestor_name, node_name, graph)
+      }
     }
   } # end for
 

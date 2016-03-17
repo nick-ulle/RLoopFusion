@@ -18,7 +18,7 @@ test_that("nodes track loop type", {
 
   expect_equal(result[[1]], "parallel")
   expect_equal(result[[2]], "none")
-  expect_equal(result[[3]], "sequential")
+  expect_equal(result[[3]], "serial")
 })
 
 
@@ -103,7 +103,7 @@ test_that("introduced output dependence doesn't make FPEs", {
   result = fusion_graph(expression)$graph
 
   expect_equal_set(nodes(result), c("p1", "p2"))
-  expect_null(edgeData(result, attr = "prevent_fusion")[["p1|p2"]])
+  expect_false(edgeData(result, attr = "prevent_fusion")[["p1|p2"]])
 })
 
 
@@ -118,7 +118,7 @@ test_that("introduced input dependence doesn't make FPEs", {
   result = fusion_graph(expression)$graph
 
   expect_equal_set(nodes(result), c("p1", "p2"))
-  expect_null(edgeData(result, attr = "prevent_fusion")[["p1|p2"]])
+  expect_false(edgeData(result, attr = "prevent_fusion")[["p1|p2"]])
 })
 
 

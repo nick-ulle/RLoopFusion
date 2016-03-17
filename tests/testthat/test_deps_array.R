@@ -9,8 +9,8 @@ test_that("write dependencies are collected for arrays", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("x", "y"))
-  expect_equal_set(result$writes, "x")
+  expect_equal_set(result$get_reads(), c("x", "y"))
+  expect_equal_set(result$get_writes(), "x")
 })
 
 
@@ -19,7 +19,7 @@ test_that("read dependencies are collected for arrays", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("y", "i"))
-  expect_equal_set(result$writes, "x")
+  expect_equal_set(result$get_reads(), c("y", "i"))
+  expect_equal_set(result$get_writes(), "x")
 })
 

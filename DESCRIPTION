@@ -4,7 +4,9 @@ Version: 0.1-0
 Authors@R: person("Nick", "Ulle", email = "nick.ulle@gmail.com", role = c("aut", "cre"))
 Description: Automatically fuses for loops in R code.
 Depends:
-    R (>= 3.2.3)
+    R (>= 3.2.3),
+    graph,
+    RBGL
 License: GPL-2
 LazyData: true
 Suggests:

@@ -4,7 +4,7 @@
 context("loop-carried deps")
 
 
-test_that("simple parallel loop is parallel", {
+test_that("true dependence implies parallel loop", {
   expression = quote(
     for (i in 1:10) {
       a = i
@@ -18,7 +18,7 @@ test_that("simple parallel loop is parallel", {
 })
 
 
-test_that("sequential loop is sequential", {
+test_that("antidependence implies serial loop", {
   expression = quote(
     for (i in 1:10) {
       a = a + 1
@@ -27,11 +27,11 @@ test_that("sequential loop is sequential", {
 
   result = collect_deps(expression)
 
-  expect_equal(result$loop_type, "sequential")
+  expect_equal(result$loop_type, "serial")
 })
 
 
-test_that("parallel loop is parallel", {
+test_that("conditional write before true dependence implies parallel loop", {
   expression = quote(
     for (i in 1:10) {
       if (i == 1)
@@ -48,19 +48,23 @@ test_that("parallel loop is parallel", {
 })
 
 
-# Here we fool the dependency algorithm with a write followed by a read. This
-# is sequential, since the write only happens in the first iteration. How can
-# we detect this in general?
-#
-# What matters is that the write is conditional, so it might not take place.
-# So a write shouldn't "count" for future reads unless it's unconditional or in
-# every branch of a conditional.
-#
-# We still need to keep track of conditional writes, though, because subsequent
-# loops need to know about them. That is, assume they do take place in some
-# iteration of the loop.
-#
-test_that("sequential loop with conditional is sequential", {
+test_that("true dependence in conditional implies parallel loop", {
+  expression = quote(
+    for (i in 1:10) {
+      if (i == 3) {
+        a = 5
+        x = a
+      }
+    }
+  )
+
+  result = collect_deps(expression)
+
+  expect_equal(result$loop_type, "parallel")
+})
+
+
+test_that("conditional write before read implies serial loop", {
   # Every iteration depends on the first iteration.
   expression = quote(
     for (i in 1:10) {
@@ -73,11 +77,11 @@ test_that("sequential loop with conditional is sequential", {
 
   result = collect_deps(expression)
 
-  expect_equal(result$loop_type, "sequential")
+  expect_equal(result$loop_type, "serial")
 })
 
 
-test_that("parallel loop with conditional is parallel", {
+test_that("write in all branches before read implies parallel loop", {
   expression = quote(
     for (i in 1:n) {
       if (i == 1)
@@ -97,7 +101,7 @@ test_that("parallel loop with conditional is parallel", {
 })
 
 
-test_that("parallel loop with nested conditional is parallel", {
+test_that("true dependence with nested conditional implies parallel loop", {
   expression = quote(
     for (i in 1:n) {
       if (i == 1)

@@ -9,8 +9,8 @@ test_that("simple = writes are collected", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, character(0))
-  expect_equal_set(result$writes, "x")
+  expect_equal_set(result$get_reads(), character(0))
+  expect_equal_set(result$get_writes(), "x")
 })
 
 
@@ -19,8 +19,8 @@ test_that("simple <- writes are collected", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, character(0))
-  expect_equal_set(result$writes, "y")
+  expect_equal_set(result$get_reads(), character(0))
+  expect_equal_set(result$get_writes(), "y")
 })
 
 
@@ -29,8 +29,8 @@ test_that("simple = reads are collected", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, "y")
-  expect_equal_set(result$writes, "x")
+  expect_equal_set(result$get_reads(), "y")
+  expect_equal_set(result$get_writes(), "x")
 })
 
 
@@ -39,6 +39,6 @@ test_that("simple <- reads are collected", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, "a2")
-  expect_equal_set(result$writes, "a1")
+  expect_equal_set(result$get_reads(), "a2")
+  expect_equal_set(result$get_writes(), "a1")
 })

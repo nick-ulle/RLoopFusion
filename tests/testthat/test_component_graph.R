@@ -7,7 +7,7 @@ context("component graph")
 test_that("correct component graph for Figure 2(a) from Kennedy", {
   graph = new_fusion_graph()
   graph = addNode(c("s1", "s2", "p3", "p4", "s5", "s6", "p7", "p8"), graph)
-  nodeData(graph, c("s1", "s2", "s5", "s6"), "type") = "sequential"
+  nodeData(graph, c("s1", "s2", "s5", "s6"), "type") = "serial"
   nodeData(graph, c("p3", "p4", "p7", "p8"), "type") = "parallel"
 
   graph = addEdge(c("s1", "s2"), "p4", graph)
@@ -27,7 +27,7 @@ test_that("correct component graph for Figure 2(d) from Kennedy", {
   # Figure 2(d) from Kennedy.
   graph = new_fusion_graph()
   graph = addNode(c("s1", "s2", "p3p4", "s5", "s6", "p7p8"), graph)
-  nodeData(graph, c("s1", "s2", "s5", "s6"), "type") = "sequential"
+  nodeData(graph, c("s1", "s2", "s5", "s6"), "type") = "serial"
   nodeData(graph, c("p3p4", "p7p8"), "type") = "parallel"
 
   graph = addEdge(c("s1", "s2"), "p3p4", graph)
@@ -36,7 +36,7 @@ test_that("correct component graph for Figure 2(d) from Kennedy", {
   graph = addEdge("s6", "p7p8", graph)
 
   result = subgraph(graph, c("s1", "s2", "s5", "s6"))
-  result = necessary_edges(graph, result, "sequential")
+  result = necessary_edges(graph, result, "serial")
 
   expect_true( all(isAdjacent(result, c("s1", "s2"), c("s5", "s6"))) )
   expect_true( all(edge_attr(result, "prevent_fusion")) )

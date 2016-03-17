@@ -13,8 +13,8 @@ test_that("dependencies are collected for {}", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("y", "z"))
-  expect_equal_set(result$writes, "x")
+  expect_equal_set(result$get_reads(), c("y", "z"))
+  expect_equal_set(result$get_writes(), "x")
 })
 
 
@@ -30,8 +30,8 @@ test_that("dependencies are collected for {} with multiple assignments", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, c("a2", "a5"))
-  expect_equal_set(result$writes, c("a1", "a3", "a4"))
+  expect_equal_set(result$get_reads(), c("a2", "a5"))
+  expect_equal_set(result$get_writes(), c("a1", "a3", "a4"))
 })
 
 
@@ -44,6 +44,6 @@ test_that("only external dependencies are collected", {
 
   result = collect_deps(expression)
 
-  expect_equal_set(result$reads, character(0))
-  expect_equal_set(result$writes, c("a1", "a2"))
+  expect_equal_set(result$get_reads(), character(0))
+  expect_equal_set(result$get_writes(), c("a1", "a2"))
 })
