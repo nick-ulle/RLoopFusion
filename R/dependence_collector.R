@@ -2,8 +2,11 @@
 #   Functions for collecting dependences in a block of code.
 
 
-#' Collect variable dependence information for a code block.
+#' Collect Dependence Information
 #'
+#' This function collects the dependence information for a block of code.
+#'
+#' @param x a block of code
 #' @export
 collect_deps = function(x) {
   collector = DependenceCollector(code = x)
@@ -19,7 +22,8 @@ collect_deps = function(x) {
 }
 
 
-`.collect_deps.<-` = `.collect_deps.=` = function(x, state) {
+#' @export
+`.collect_deps.<-` = function(x, state) {
   # = [left] [right]
 
   # First collect dependencies on right side.
@@ -44,11 +48,14 @@ collect_deps = function(x) {
     stop(msg)
   }
 }
+#' @export
+`.collect_deps.=` = `.collect_deps.<-`
 
 
 # Need an unconditional write in every branch. So use a blank collector for
 # every branch. The new write-set is the intersection of each branch's write
 # set. Writes that aren't in the new write-set are conditional writes.
+#' @export
 .collect_deps.if = function(x, state) {
   # if [condition] [if] [else]
 
@@ -84,6 +91,7 @@ collect_deps = function(x) {
 }
 
 
+#' @export
 .collect_deps.call = function(x, state) {
   # NOTE: This is separate because special handling of arrays will be needed.
 
@@ -92,6 +100,7 @@ collect_deps = function(x) {
 }
 
 
+#' @export
 .collect_deps.for = function(x, state) {
   # for [variable] [range] [body]
   state$add_writes(x[[2]])
@@ -100,19 +109,27 @@ collect_deps = function(x) {
 }
 
 
-.collect_deps.while =   # while [condition] [body]
-.collect_deps.repeat =  # repeat [body]
-`.collect_deps.{` =     # { [line 1] [line 2] ...
-  function(x, state) {
-    lapply(x[-1], .collect_deps, state)
-  }
+#' @export
+.collect_deps.while =
+function(x, state) {
+  # while [condition] [body]
+  # repeat [body]
+  # { [line 1] [line 2] ...
+  lapply(x[-1], .collect_deps, state)
+}
+#' @export
+.collect_deps.repeat = .collect_deps.while
+#' @export
+`.collect_deps.{` = .collect_deps.while
 
 
+#' @export
 .collect_deps.name = function(x, state) {
   state$add_reads(x)
 }
 
 
+#' @export
 .collect_deps.default = function(x, state) {
   # Do nothing.
 }

@@ -11,11 +11,18 @@
 #   5. [x] Update the dependency graph based on (3) and (4).
 
 
+#' Generate a Fusion Graph
+#'
+#' This function generates the fusion graph for the specified block of code.
+#'
+#' @param x a function or code block
+#' @export
 fusion_graph = function(x) {
   UseMethod("fusion_graph")
 }
 
 
+#' @export
 `fusion_graph.{` = function(x) {
   graph = new_fusion_graph()
 
@@ -44,6 +51,7 @@ fusion_graph = function(x) {
 } # end fusion_graph.{
 
 
+#' @export
 fusion_graph.call = function(x) {
   # function [parameters] [body] [srcref]
   name = as.character(x[[1]])
@@ -51,14 +59,15 @@ fusion_graph.call = function(x) {
   if (name == "function") {
     if (class(x[[3]]) != "{")
       x[[3]] = call("{", x[[3]])
-    .fuse_loops(x[[3]])
+    fusion_graph(x[[3]])
 
   } else {
-    .fuse_loops.default(x)
+    fusion_graph.default(x)
   }
 }
 
 
+#' @export
 fusion_graph.default = function(x) {
   stop("Class %s is not supported for loop fusion.", class(x))
 }
@@ -66,9 +75,9 @@ fusion_graph.default = function(x) {
 
 #' Add Edges To The Fusion Graph
 #'
-#' @param g graph
-#' @param i index of current block
-#' @param nodes list of nodes
+#' @param graph a fusion graph
+#' @param i index of the current block
+#' @param nodes a list of dependency information for the nodes
 add_fusion_edges = function(graph, i, nodes) {
   node      = nodes[[i]]
   node_name = names(nodes)[[i]]
@@ -96,6 +105,7 @@ add_fusion_edges = function(graph, i, nodes) {
     # Fix for inductive variables.
     ww = writes[writes %in% ancestor_writes]
     if (both_for && i_var == ancestor_i_var) {
+      browser()
       ww = setdiff(ww, i_var)
     }
     # Add the ordering edges.
@@ -159,6 +169,10 @@ new_fusion_graph = function() {
 #'
 #' Add a fusion-preventing edge to a fusion graph.
 #'
+#' @param from the node the edge starts at
+#' @param to the node the edge ends at
+#' @param graph a fusion graph
+#' @param ... additional arguments to addEdge
 #' @export
 add_fp_edge = function(from, to, graph, ...) {
   graph = addEdge(from, to, graph, ...)
@@ -170,6 +184,8 @@ add_fp_edge = function(from, to, graph, ...) {
 
 #' Check whether two for-loops have equal headers.
 #'
+#' @param x the first for-loop
+#' @param y the second for-loop
 #' @export
 header_equal = function(x, y) {
   # FIXME: We really only care about whether the sequence is equal. The
@@ -181,6 +197,8 @@ header_equal = function(x, y) {
 #' Group a list of code objects into blocks, while keeping the specified
 #' classes as independent blocks.
 #'
+#' @param x a list of code objects or a code block
+#' @param as_block classes which should be treated as independent blocks
 #' @export
 blockify = function(x, as_block) {
   if (class(x) == "{")

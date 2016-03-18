@@ -1,14 +1,17 @@
-Package: rloopfuse
+Package: RLoopFusion
 Title: Loop Fusion for R
 Version: 0.1-0
-Authors@R: person("Nick", "Ulle", email = "nick.ulle@gmail.com", role = c("aut", "cre"))
+Author: Nick Ulle [aut, cre]
+Maintainer: Nick Ulle <nick.ulle@gmail.com>
 Description: Automatically fuses for loops in R code.
-Depends:
-    R (>= 3.2.3),
-    graph,
-    RBGL
+Depends: R (>= 3.2.0)
 License: GPL-2
 LazyData: true
+Imports:
+    methods,
+    graph,
+    RBGL
 Suggests:
-    testthat
+    testthat,
+    Rgraphviz
 RoxygenNote: 5.0.1

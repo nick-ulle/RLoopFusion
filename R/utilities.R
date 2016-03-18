@@ -49,6 +49,8 @@ in_which = function(x, l) {
 #' Compute Union
 #'
 #' Computes the union of an arbitrary number of vectors.
+#'
+#' @param ... vectors to be unioned
 union = function(...) {
   unique(do.call(c, lapply(list(...), as.vector)))
 }

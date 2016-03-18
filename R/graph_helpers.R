@@ -8,7 +8,7 @@
 #' package, but the data defaults for the graph are preserved.
 #'
 #' @param graph a graph
-#' @param nodes labels of the nodes to keep
+#' @param nodes the nodes to keep
 #' @export
 subgraph = function(graph, nodes) {
   subgraph = subGraph(nodes, graph)

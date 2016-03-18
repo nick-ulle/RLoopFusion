@@ -1,4 +1,4 @@
 library(testthat)
-library(rloopfuse)
+library(RLoopFusion)
 
-test_check("rloopfuse")
+test_check("RLoopFusion")
