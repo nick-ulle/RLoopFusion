@@ -125,7 +125,8 @@ DependenceCollector =
       "dependence"  = "character",
       ".serial" = "logical",
       "loop_type" = "character",
-      "code" = "ANY"
+      "code" = "ANY",
+      ".i_var" = "character"
     ),
     methods = list(
       "add_reads" = function(x) {
@@ -155,6 +156,10 @@ DependenceCollector =
         update_loop_type()
         names(.serial)[.serial]
       },
+      "get_i_var" = function() {
+        update_loop_type()
+        .i_var
+      },
 
       "update_loop_type" = function() {
         # FIXME: Can this be cleaned up?
@@ -166,14 +171,16 @@ DependenceCollector =
         # A loop is serial if it has a read before a write. That is:
         #   1. Antidependence
         #   2. True dependence where the write is conditional
-        loop_type <<-
-          if (class(code) == "for") {
+        if (class(code) == "for") {
+          .i_var <<- as.character(code[[2]])
+          loop_type <<- 
             if (any(.serial))
               "serial"
             else
               "parallel"
-          } else
-            "none"
+        } else {
+          loop_type <<- "none"
+        }
       }
     ) # end methods
   ) # end setRefClass()

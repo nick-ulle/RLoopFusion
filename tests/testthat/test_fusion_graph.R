@@ -118,7 +118,7 @@ test_that("introduced input dependence doesn't make FPEs", {
   result = fusion_graph(expression)$graph
 
   expect_equal_set(nodes(result), c("p1", "p2"))
-  expect_false(edgeData(result, attr = "prevent_fusion")[["p1|p2"]])
+  expect_null(edgeData(result, attr = "prevent_fusion")[["p1|p2"]])
 })
 
 

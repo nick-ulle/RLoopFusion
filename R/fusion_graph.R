@@ -78,22 +78,33 @@ add_fusion_edges = function(graph, i, nodes) {
   reads   = node$get_reads()
   writes  = node$get_writes()
   anti    = node$get_anti()
+  i_var   = node$get_i_var()
 
   for (j in seq.int(i - 1, 1, -1)) {
     ancestor        = nodes[[j]]
     ancestor_name   = names(nodes)[[j]]
     ancestor_reads  = ancestor$get_reads()
     ancestor_writes = ancestor$get_writes()
+    ancestor_i_var  = ancestor$get_i_var()
     is_adjacent     = FALSE
+
+    both_for = (is_for && class(ancestor$code) == "for")
 
     # Ordering Edges
     # ==============
     new_reads = setdiff(reads, ancestor_writes)
+    # Fix for inductive variables.
+    ww = writes[writes %in% ancestor_writes]
+    if (both_for && i_var == ancestor_i_var) {
+      ww = setdiff(ww, i_var)
+    }
+    # Add the ordering edges.
     if (
       # True (W, R)
       length(new_reads) != length(reads) ||
       # Anti (R, W) or Output (W, W)
-      any(writes %in% c(ancestor_reads, ancestor_writes))
+      any(writes %in% ancestor_reads) ||
+      length(ww) > 0
     ) {
       # Add an edge.
       graph = addEdge(ancestor_name, node_name, graph)
@@ -103,7 +114,7 @@ add_fusion_edges = function(graph, i, nodes) {
 
     # Fusion-Preventing Edges
     # =======================
-    if (is_for && class(ancestor$code) == "for") {
+    if (both_for) {
       if (
         # Headers are not equivalent.
         !header_equal(node$code, ancestor$code) ||
