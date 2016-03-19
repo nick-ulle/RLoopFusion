@@ -20,7 +20,7 @@ supplemental paper.
    `install.packages("devtools")`.
 
 4. Finally, install this package from GitHub, with
-   `devtools::install_github("RLoopFusion", "nick-ulle")`
+   `devtools::install_github("nick-ulle/RLoopFusion")`
 
 ### Note
 
