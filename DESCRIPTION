@@ -13,5 +13,7 @@ Imports:
     RBGL
 Suggests:
     testthat,
-    Rgraphviz
+    Rgraphviz,
+    knitr
 RoxygenNote: 5.0.1
+VignetteBuilder: knitr

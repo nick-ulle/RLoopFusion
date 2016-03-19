@@ -1,0 +1,129 @@
+---
+title: "RLoopFusion Examples"
+author: "Nick Ulle"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RLoopFusion}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette presents a simple example illustrating how RLoopFusion is used,
+and a more sophisticated example that demonstrates the power of the package.
+
+```{r, results = "hide"}
+library(RLoopFusion)
+```
+
+## Example 1
+
+Consider the following code.
+
+```{r, results = "hide"}
+ex1 = quote({
+  a = b = c = d = 0
+  for (i in 2:10)
+    a = i
+  for (i in 1:10)
+    b = i
+  for (i in 1:10)
+    c = i
+  for (i in 1:10)
+    d = d + 1
+})
+```
+
+The `quote` function tells R to parse but not evaluate the code.
+This is done so that loop fusion can be applied.
+In this code, only the two loops in the middle should be fused.
+The first loop has a different header from the others,
+and the last loop is serial whereas all the other loops are parallel.
+We can apply loop fusion with the `loop_fusion` function.
+
+```{r}
+loop_fusion(ex1)
+```
+
+This gives the correct result.
+
+The fusion graph can be viewed with the `fusion_graph` function.
+
+```{r, results = "hide"}
+graph = fusion_graph(ex1)
+```
+
+In order to plot the graph, first load the `graph` and `Rgraphviz` libraries.
+The graph can then be plotted by calling the `plot` function on the `graph`
+element of the output.
+
+```{r}
+library(graph)
+library(Rgraphviz)
+plot(graph$graph)
+```
+
+Parallel, serial, and block nodes are denoted by "p", "s", and "n", respectively.
+The plot does not indicate which edges are fusion-preventing.
+In this example, only the edges out of "p2" are fusion-preventing.
+This can be viewed in the edge data for the graph.
+
+```{r}
+edge_attr(graph$graph, "prevent_fusion")
+```
+
+Finally, dependence information can be computed with the `collect_deps` function.
+```{r}
+collect_deps(ex1)
+```
+This function can compute dependence information for any code object,
+not just code blocks.
+
+## Example 2
+
+Now we consider a more challenging example. The code is shown below.
+
+```{r}
+ex2 = quote({
+  n = 42
+
+  x = 0
+  for (i in 1:n) {
+    # A parallel loop.
+    x = i
+  }
+
+  a = b = 1
+  for (i in 1:n) {
+    # A serial loop that computes Fibonacci numbers.
+    fib = a + b
+    a = b
+    b = fib
+  }
+
+  y = 0
+  for (i in 1:n) {
+    # A parallel loop that depends on the Fibonacci loop.
+    y = fib
+  }
+})
+```
+
+The first and last loop are parallel, while the middle loop is serial.
+Fusion is complicated by the fact that the last loop depends on the middle loop.
+The loop fusion algorithm correctly fuses the first and last loop, then places
+the new loop _after_ the serial loop.
+
+```{r}
+loop_fusion(ex2)
+```
+
+This example emphasizes the power of Kennedy and McKinley's algorithm
+(in fact, it approximates the example they present as Figure 1).
+If parallel loop fusion was not done separately from serial loop fusion,
+the first two loops might end up in the same partition, and the algorithm
+would fail to fuse the two parallel loops. The fusion graph is shown below.
+
+```{r, echo = FALSE}
+plot(fusion_graph(ex2)$graph)
+```

@@ -105,7 +105,6 @@ add_fusion_edges = function(graph, i, nodes) {
     # Fix for inductive variables.
     ww = writes[writes %in% ancestor_writes]
     if (both_for && i_var == ancestor_i_var) {
-      browser()
       ww = setdiff(ww, i_var)
     }
     # Add the ordering edges.
